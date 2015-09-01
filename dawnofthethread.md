@@ -3,7 +3,7 @@
 ### TL;DR
 
 I have spent some time using Google’s Go language, so I was thrilled when I stumbled upon Parallel Universe’s Quasar framework. If you have been using Go then you are quite familiar with its Channels and go-routines.
-<br />Well, now it’s seems like we can use the same way of writing our software on the JVM.
+<br />Well, now it’s seems like we can use the same way of writing our software on the JVM with Quasar fibers and channels.
 
 To make things somewhat more clear an explanation might be in order.
 <br/>Depending on what language background you have this is most likely nothing new to you, but you might be used to other names for these features. As mention earlier Go has named these features Channels and Go-rutines. In Erlang you spawn processes, I could continue listing other implementations since it’s seems like every language has their own implementation, heck there is even a couple of other implementations for Java then Quasar Fibers.
