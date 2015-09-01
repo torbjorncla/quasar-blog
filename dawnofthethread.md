@@ -36,7 +36,7 @@ The idea is that one request leads to multiple internal API calls and we have a 
 For example we might want to keep down the amount of API calls for mobile users to lower the round trips by mashing multiple internal responses to one external. It also gives us the possibility to provide a more fine-grained API to lower the cost of bandwidth.
 
 <br /> </br > <br />
-![API-Gateway](/Users/torbjorncla/Code/Java/blogg/dawnofthethread/docs/img/apigateway.png)
+![API-Gateway](/img/apigateway.png)
 
 We will deploy our gateway on Tomcat 8 and you can find the full source at [github](https://github.com/torbjorncla)
 
