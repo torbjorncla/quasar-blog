@@ -2,17 +2,17 @@
 
 ### TL;DR
 
-I have spent some time using Google’s Go language, so I was thrilled when I stumbled upon Parallel Universe’s Quasar framework. If you have been using Go then you are quite familiar with its Channels and go-routines.
+I have spent some time using Google’s Go language, so I was thrilled when I stumbled upon Parallel Universe’s [Quasar](http://www.paralleluniverse.co/quasar/) framework. If you have been using Go then you are quite familiar with its Channels and go-routines.
 <br />Well, now it’s seems like we can use the same way of writing our software on the JVM with Quasar fibers and channels.
 
 To make things somewhat more clear an explanation might be in order.
-<br/>Depending on what language background you have this is most likely nothing new to you, but you might be used to other names for these features. As mention earlier Go has named these features Channels and Go-rutines. In Erlang you spawn processes, I could continue listing other implementations since it’s seems like every language has their own implementation, heck there is even a couple of other implementations for Java then Quasar Fibers.
+<br/>Depending on what language background you have this is most likely nothing new to you, but you might be used to other names for these features. As mentioned earlier Go has named these features Channels and Go-rutines. In Erlang you spawn processes, I could continue listing other implementations since it’s seems like every language has their own implementation, heck there is even a couple of other implementations for Java then Quasar Fibers.
 <br/>I guess I have to mention Haskell threads and sparks not to get my inbox filled with angry Haskellers emails.
 
 So what is a Fiber or any other implementation of the same functionality?
 <br/>Well if you were old enough to us Java 1.1 then you have already seen them on the JVM under the name Green threads, but was later removed due to various reasons.
-<br/>A Fiber or lightweight-thread (throwing in another name, for the sake of confusion) is a M:N (hybrid threading) thread mapping, meaning that its maps a M number of application threads onto N number of os threads.
-<br/>While Java today uses 1:1 mapping meaning that an application-level thread maps to 1 os thread. And that’s one of the reasons we see non-blocking programing becoming yet again more and more popular since in todays Java, blocking a thread on application-level actual means blocking resources on os level which is quite resource consuming.
+<br/>A Fiber or lightweight-thread (throwing in another name, for the sake of confusion) is a M:N (hybrid threading) thread mapping, meaning that its maps a M number of application threads onto N number of threads in the operating system.
+<br/>While Java today uses 1:1 mapping meaning that an application-level thread maps to one os thread. And that’s one of the reasons we see non-blocking programing becoming yet again more and more popular since in todays Java, blocking a thread on application-level actual means blocking resources on os level which is quite resource consuming.
 
 I thought about writing something on how the Quasar Framework achieves these lightweight-threads. But if you are anything like me you will just scroll past all this text in search for a block of code. If you should be interested in how they do the short answer is that they implement continuations using bytecode instrumentation and using a separate stack to hold state. The long answer you can get from [Ron Presslers presentation at JVMLS](http://www.paralleluniverse.co/quasar/).
 
@@ -21,17 +21,17 @@ So now we got some idea what a Fiber is, but what problem do they solve?
 #### Concurrency!
 
 Using the multithreaded approach that’s been the de facto standard for some years now have some problems when it comes to handling concurrency. To be clear I’m talking about Java, so Node folks no need to flame.
-It’s not uncommon that we see thread-pool starvation and high memory consumption due to “one-user-one-thread” mapping.  
+It’s not uncommon that we see thread-pool starvation and high memory consumption due to “one-request-one-thread” mapping.  
 One way of solving these issues is using non-blocking techniques like callbacks and monads. The problem with these techniques is not that they don’t work, but they can be quite hard to understand and debug if you as most of us are used to the old way of understanding what will happen when by just looking at the code.
 <br/>Quasar fibers gives you a programming model that you already are familiar with but does not hog all your os resources.
 
 
-If you are more interested in reading about non-blocking, reactive frameworks and techniques I truly recommend my colleges great [presentation](http://callistaenterprise.se/blogg/presentationer/2015/01/28/reactive/).
+If you are more interested in reading about non-blocking techniques and reactive frameworks I truly recommend my colleges great [presentation](http://callistaenterprise.se/blogg/presentationer/2015/01/28/reactive/) and [blog post](http://callistaenterprise.se/blogg/teknik/2014/04/22/c10k-developing-non-blocking-rest-services-with-spring-mvc/).
 
 
 ### API-Gateway
 
-To demonstrate how we can use fibers in a real life situation we are going to build ourselves a simple API-Gateway, a well now pattern for fronting [Microservices](http://callistaenterprise.se/blogg/teknik/2015/05/20/blog-series-building-microservices/).
+To demonstrate how we can use fibers in a real life situation we are going to build ourselves a simple API-Gateway, a well now pattern for fronting for example [microservices](http://callistaenterprise.se/blogg/teknik/2015/05/20/blog-series-building-microservices/).
 The idea is that one request leads to multiple internal API calls and we have a gateway facing the user to be able to customize the outer API to fit the need.
 For example we might want to keep down the amount of API calls for mobile users to lower the round trips by mashing multiple internal responses to one external. It also gives us the possibility to provide a more fine-grained API to lower the cost of bandwidth.
 
@@ -71,7 +71,7 @@ dependencies {
     providedCompile 'org.apache.tomcat:tomcat-servlet-api:8.0.23'
 }
  ```
- As you see there is something called comsat that keeps showing up, Comsat is an open-source set of libraries that integrates with Quasar. The reason for using these are because if we would to do an actual thread blocking operation inside a fiber it would actually block the underlying os thread, thus it would be pointless to run it in a fiber instead of an actual thread.
+ As you see there is something called comsat that keeps showing up, Comsat is an open-source set of libraries that integrates with Quasar. The reason for using these are because if we would do an actual thread blocking operation inside a fiber it would actually block the underlying os thread, thus it would be pointless to run it in a fiber instead of an actual thread.
 
  We will be using Jersey to define our REST-Services and for that we will use the comsat-jersey-server to make our services fiber aware.
  <br /><span style="color:#e74c3c">WEB-INF/web.xml</span>
@@ -150,7 +150,7 @@ public class MobileServicesImpl {
 This might be the naïve first approach to creating a gateway.
 We have a list of some endpoints that we iterate over and sum up the response that’s then returned.
 If we were to run this service in a default servlet container each user of this service would hold one os thread for as long as it took to get the response from all the endpoints in our list.
-But we have configured to use the comsat servlet container. Which instead of fetching a thread from the pool for each user, spawns a new fiber. I have annotated get function with @Suspendable which is one way of telling Quasar what method to instrument.
+But we have configured to use the comsat servlet container. Which instead of fetching a thread from the pool for each user, spawns a new fiber. I have annotated get function with `@Suspendable` which is one way of telling Quasar what method to instrument.
 
 If you have a keen eye you would see that I initiate the Apache HttpClient with the <b>FiberHttpClientBuilder</b> provided by the comsat Apache HttpClient library. This is because as I mentioned earlier that if we were to do a blocking IO operation as <b>HttpClient.execute</b> does we would block the underlying os thread. What <b>FiberHttpClientBuilder</b> does is to wrap Apache <b>HttpAsyncClient</b> and letting us operate on it as if it were a blocking operation.
 
